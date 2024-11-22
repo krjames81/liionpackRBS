@@ -424,7 +424,7 @@ def solve(
     else:
         rm = lp.CasadiManager()
         lp.logger.notice("manager instruction not supported, using default")
-
+    print("Hello I'm the modified liionpack")
     output = rm.solve(
         netlist=netlist,
         sim_func=sim_func,
