@@ -52,7 +52,6 @@ def my_cco(inputs, sim, dt, Nspm, nproc, variable_names, mapped):
             evaluates the event variables. see casadi function
 
     """
-    import casadi
     solver = sim.solver
     # Initial solution - this builds the model behind the scenes
     sim.build()
@@ -181,7 +180,7 @@ class GenericActor:
             self.simulation = sim_func(self.parameter_values)
 
         # Set up integrator
-        casadi_objs = my_cco(
+        casadi_objs = lp.my_cco(
             inputs, self.simulation, dt, Nspm, nproc, variable_names, mapped
         )
         self.model = self.simulation.built_model
