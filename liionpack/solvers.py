@@ -12,6 +12,7 @@ import numpy as np
 import time as ticker
 from tqdm import tqdm
 import pybamm
+import casadi
 
 def my_cco(inputs, sim, dt, Nspm, nproc, variable_names, mapped):
     """
