@@ -2,7 +2,7 @@
 # Solvers
 #
 import liionpack as lp
-from liionpack.solver_utils import _create_casadi_objects as cco
+#from liionpack.solver_utils import _create_casadi_objects as cco
 from liionpack.solver_utils import _serial_step as ss
 from liionpack.solver_utils import _mapped_step as ms
 from liionpack.solver_utils import _serial_eval as se
@@ -12,6 +12,129 @@ import numpy as np
 import time as ticker
 from tqdm import tqdm
 import pybamm
+
+def my_cco(inputs, sim, dt, Nspm, nproc, variable_names, mapped):
+    """
+    Internal function to produce the casadi objects in their mapped form for
+    parallel evaluation
+
+    Args:
+        inputs (dict):
+            initial guess for inputs (not used for simulation).
+        sim (pybamm.Simulation):
+            A PyBaMM simulation object that contains the model, parameter values,
+            solver, solution etc.
+        dt (float):
+            The time interval (in seconds) for a single timestep. Fixed throughout
+            the simulation
+        Nspm (int):
+            Number of individual batteries in the pack.
+        nproc (int):
+            Number of parallel processes to map to.
+        variable_names (list):
+            Variables to evaluate during solve. Must be a valid key in the
+            model.variables
+        mapped (bool):
+            Use the mapped casadi objects, default is True
+
+    Returns:
+        integrator (mapped casadi.integrator):
+            Solves an initial value problem (IVP) coupled to a terminal value
+            problem with differential equation given as an implicit ODE coupled
+            to an algebraic equation and a set of quadratures
+        variables_fn (mapped variables evaluator):
+            evaluates the simulation and output variables. see casadi function
+        t_eval (np.ndarray):
+            Float array of times to evaluate.
+            times to evaluate in a single step, starting at zero for each step
+        events_fn (mapped events evaluator):
+            evaluates the event variables. see casadi function
+
+    """
+    solver = sim.solver
+    # Initial solution - this builds the model behind the scenes
+    sim.build()
+    initial_solutions = []
+    init_sol = sim.step(
+        dt=1e-6, save=False, starting_solution=None, inputs=inputs[0]
+    ).last_state
+    # evaluate initial condition
+    model = sim.built_model
+    y0_total_size = (
+        model.len_rhs + model.len_rhs_sens + model.len_alg + model.len_alg_sens
+    )
+    y_zero = np.zeros((y0_total_size, 1))
+    for inpt in inputs:
+        inputs_casadi = casadi.vertcat(*[x for x in inpt.values()])
+        initial_solutions.append(init_sol.copy())
+        _init = model.initial_conditions_eval(0, y_zero, inputs_casadi)
+        initial_solutions[-1].y[:] = _init
+
+    # Step model forward dt seconds
+    t_eval = np.linspace(0, dt, 11)
+
+    # No external variables - Temperature solved as lumped model in pybamm
+    # External variables could (and should) be used if battery thermal problem
+    # Includes conduction with any other circuits or neighboring batteries
+    # inp_and_ext.update(external_variables)
+    inp_and_ext = inputs
+
+    # Code to create mapped integrator
+    integrator = solver.create_integrator(
+        sim.built_model, inputs=inp_and_ext, t_eval=t_eval
+    )
+    if mapped:
+        integrator = integrator.map(Nspm, "thread", nproc)
+    # Get the input parameter order
+    ip_order = inputs[0].keys()
+    # Variables function for parallel evaluation
+    casadi_objs = sim.built_model.export_casadi_objects(
+        variable_names=variable_names, input_parameter_order=ip_order
+    )
+    variables = casadi_objs["variables"]
+    t, x, z, p = (
+        casadi_objs["t"],
+        casadi_objs["x"],
+        casadi_objs["z"],
+        casadi_objs["inputs"],
+    )
+    variables_stacked = casadi.vertcat(*variables.values())
+    variables_fn = casadi.Function("variables", [t, x, z, p], [variables_stacked])
+    if mapped:
+        variables_fn = variables_fn.map(Nspm, "thread", nproc)
+
+    # Look for events in model variables and create a function to evaluate them
+    all_vars = sorted(sim.model.variables.keys())
+    event_vars = [v for v in all_vars if "Event" in v]
+    if len(event_vars) > 0:
+        # Variables function for parallel evaluation
+        casadi_objs = sim.built_model.export_casadi_objects(
+            variable_names=event_vars, input_parameter_order=ip_order
+        )
+        events = casadi_objs["variables"]
+        t, x, z, p = (
+            casadi_objs["t"],
+            casadi_objs["x"],
+            casadi_objs["z"],
+            casadi_objs["inputs"],
+        )
+        events_stacked = casadi.vertcat(*events.values())
+        events_fn = casadi.Function("variables", [t, x, z, p], [events_stacked])
+        if mapped:
+            events_fn = events_fn.map(Nspm, "thread", nproc)
+    else:
+        events_fn = None
+
+    output = {
+        "integrator": integrator,
+        "variables_fn": variables_fn,
+        "t_eval": t_eval,
+        "event_names": event_vars,
+        "events_fn": events_fn,
+        "initial_solutions": initial_solutions,
+    }
+    return output
+
 
 
 class GenericActor:
@@ -56,7 +179,7 @@ class GenericActor:
             self.simulation = sim_func(self.parameter_values)
 
         # Set up integrator
-        casadi_objs = cco(
+        casadi_objs = my_cco(
             inputs, self.simulation, dt, Nspm, nproc, variable_names, mapped
         )
         self.model = self.simulation.built_model
