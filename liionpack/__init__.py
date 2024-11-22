@@ -25,7 +25,6 @@ from .netlist_utils import write_netlist
 from .sim_utils import get_initial_stoichiometries
 from .sim_utils import update_init_conc
 from .solver_utils import solve
-from .solver_utils import my_cco
 from .protocols import generate_protocol_from_experiment
 from .plots import draw_circuit
 from .plots import plot_pack
@@ -45,5 +44,6 @@ from .solvers import CasadiManager
 from .solvers import RayManager
 from .solvers import GenericActor
 from .solvers import RayActor
+from .solvers import my_cco
 
 from ._version import __version__
