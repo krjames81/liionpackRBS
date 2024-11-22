@@ -52,6 +52,7 @@ def my_cco(inputs, sim, dt, Nspm, nproc, variable_names, mapped):
             evaluates the event variables. see casadi function
 
     """
+    import casadi
     solver = sim.solver
     # Initial solution - this builds the model behind the scenes
     sim.build()
