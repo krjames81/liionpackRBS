@@ -2,6 +2,7 @@
 # Solvers
 #
 import liionpack as lp
+#KRJ - Got rid of the import of cco from solver_utils
 #from liionpack.solver_utils import _create_casadi_objects as cco
 from liionpack.solver_utils import _serial_step as ss
 from liionpack.solver_utils import _mapped_step as ms
@@ -12,8 +13,9 @@ import numpy as np
 import time as ticker
 from tqdm import tqdm
 import pybamm
-import casadi
+import casadi #KRJ - Need to import casadi here so cco can use it
 
+#KRJ - Added my_cco here
 def my_cco(inputs, sim, dt, Nspm, nproc, variable_names, mapped):
     """
     Internal function to produce the casadi objects in their mapped form for
@@ -180,6 +182,8 @@ class GenericActor:
             self.simulation = sim_func(self.parameter_values)
 
         # Set up integrator
+        #KRJ added "lp." in front of my_cco so it points to the
+        #editable lp.my_cco, and not the local function defined above.
         casadi_objs = lp.my_cco(
             inputs, self.simulation, dt, Nspm, nproc, variable_names, mapped
         )
@@ -506,6 +510,7 @@ class GenericManager:
 
     def build_inputs(self):
         inputs = []
+        print("Number of actors at build_inputs:",len(self.actors))
         for i in range(len(self.actors)):
             inputs.append(self.inputs_dict[self.slices[i]])
         return inputs
