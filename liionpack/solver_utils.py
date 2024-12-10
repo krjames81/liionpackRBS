@@ -35,6 +35,7 @@ def _serial_eval(model, solutions, inputs_dict, variables, t_eval):
     """
     len_rhs = model.concatenated_rhs.size
     N = len(solutions)
+    print("N in serial_eval:", N)
     t_min = 0.0
     var_eval = []
     for k in range(N):
@@ -147,8 +148,10 @@ def _mapped_eval(model, solutions, inputs_dict, variables, t_eval):
     """
     len_rhs = model.concatenated_rhs.size
     N = len(solutions)
+    print("Mapped eval running with N=", N)
     if solutions[0] is None:
         # First pass
+        print("First pass triggered, mapped eval")
         xend = casadi.horzcat(*[model.y0[:len_rhs] for i in range(N)])
     else:
         xend = casadi.horzcat(*[sol.y[:len_rhs, -1] for sol in solutions])
@@ -198,6 +201,7 @@ def _mapped_step(model, solutions, inputs_dict, integrator, variables, t_eval, e
     N = len(solutions)
     if solutions[0] is None:
         # First pass
+        print("First pass triggered, mapped step")
         x0 = casadi.horzcat(*[model.y0[:len_rhs] for i in range(N)])
         z0 = casadi.horzcat(*[model.y0[len_rhs:] for i in range(N)])
     else:
