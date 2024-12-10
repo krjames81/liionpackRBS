@@ -40,6 +40,7 @@ def _serial_eval(model, solutions, inputs_dict, variables, t_eval):
     for k in range(N):
         if solutions[k] is None:
             # First pass
+            print("First pass triggered, serial eval")
             xend = model.y0[:len_rhs]
         else:
             xend = solutions[k].y[:, -1]
@@ -91,6 +92,7 @@ def _serial_step(model, solutions, inputs_dict, integrator, variables, t_eval, e
     for k in range(N):
         if solutions[k] is None:
             # First pass
+            print("first pass triggered, serial step")
             x0 = model.y0[:len_rhs]
             z0 = model.y0[len_rhs:]
         else:
@@ -424,7 +426,7 @@ def solve(
     else:
         rm = lp.CasadiManager()
         lp.logger.notice("manager instruction not supported, using default")
-    print("Hello I'm the modified liionpack")
+    print("Hello I'm the modified liionpack") #KRJ - Added this so that I know the notebook is running the MODIFIED lp
     output = rm.solve(
         netlist=netlist,
         sim_func=sim_func,
