@@ -511,7 +511,7 @@ class GenericManager:
 
     def build_inputs(self):
         inputs = []
-        lp.logger.notice("Number of actors at build_inputs:",len(self.actors))
+        print("Number of actors at build_inputs:",len(self.actors))
         for i in range(len(self.actors)):
             inputs.append(self.inputs_dict[self.slices[i]])
         return inputs
