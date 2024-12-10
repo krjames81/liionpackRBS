@@ -16,7 +16,7 @@ import pybamm
 import casadi #KRJ - Need to import casadi here so cco can use it
 
 #KRJ - Added my_cco here
-def my_cco(inputs, sim, dt, Nspm, nproc, variable_names, mapped):
+def my_cco(inputs, sim, dt, Nspm, nproc, variable_names, mapped, simlist):
     """
     Internal function to produce the casadi objects in their mapped form for
     parallel evaluation
@@ -154,7 +154,7 @@ class GenericActor:
         variable_names,
         initial_soc,
         nproc,
-        simlist
+        simlist,
     ):
         print("Setup has started")
         # Casadi specific arguments
@@ -187,7 +187,7 @@ class GenericActor:
         #KRJ added "lp." in front of my_cco so it points to the
         #editable lp.my_cco, and not the local function defined above.
         casadi_objs = lp.my_cco(
-            inputs, self.simulation, dt, Nspm, nproc, variable_names, mapped
+            inputs, self.simulation, dt, Nspm, nproc, variable_names, mapped, simlist
         )
         self.model = self.simulation.built_model
         self.integrator = casadi_objs["integrator"]
@@ -272,7 +272,7 @@ class GenericManager:
         output_variables,
         initial_soc,
         nproc,
-        simlist
+        simlist,
         node_termination_func=None,
         setup_only=False,
     ):
@@ -589,7 +589,7 @@ class RayManager(GenericManager):
                     variable_names=self.variable_names,
                     initial_soc=initial_soc,
                     nproc=1,
-                    simlist=simlist
+                    simlist=simlist,
                 )
             )
         _ = [ray.get(f) for f in setup_futures]
@@ -687,7 +687,7 @@ class CasadiManager(GenericManager):
                 variable_names=self.variable_names,
                 initial_soc=initial_soc,
                 nproc=nproc,
-                simlist=simlist
+                simlist=simlist,
             )
         toc = ticker.time()
         lp.logger.info(

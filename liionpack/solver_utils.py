@@ -382,7 +382,7 @@ def solve(
     initial_soc=None,
     nproc=1,
     output_variables=None,
-    simlist=None
+    simlist=None,
     manager="casadi",
     node_termination_func=None,
 ):
