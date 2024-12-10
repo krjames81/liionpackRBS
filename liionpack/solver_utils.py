@@ -441,7 +441,7 @@ def solve(
         inputs=inputs,
         nproc=nproc,
         initial_soc=initial_soc,
-        simlist=simlist
+        simlist=simlist,
         setup_only=False,
         node_termination_func=node_termination_func,
     )
