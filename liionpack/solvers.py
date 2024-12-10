@@ -224,6 +224,7 @@ class GenericActor:
             self.variables_fn,
             self.t_eval,
         )
+        lp.logger.notice("Evaluate function running")
 
     def check_events(self):
         if self.last_events is not None:
@@ -510,7 +511,7 @@ class GenericManager:
 
     def build_inputs(self):
         inputs = []
-        print("Number of actors at build_inputs:",len(self.actors))
+        lp.logger.notice("Number of actors at build_inputs:",len(self.actors))
         for i in range(len(self.actors)):
             inputs.append(self.inputs_dict[self.slices[i]])
         return inputs
