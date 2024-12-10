@@ -155,6 +155,7 @@ class GenericActor:
         initial_soc,
         nproc,
     ):
+        print("Setup has started")
         # Casadi specific arguments
         if nproc > 1:
             mapped = True
@@ -511,7 +512,7 @@ class GenericManager:
 
     def build_inputs(self):
         inputs = []
-        print("Number of actors at build_inputs:",len(self.actors))
+        #print("Number of actors at build_inputs:",len(self.actors))
         for i in range(len(self.actors)):
             inputs.append(self.inputs_dict[self.slices[i]])
         return inputs
